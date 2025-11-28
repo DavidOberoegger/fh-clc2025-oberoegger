@@ -1,0 +1,55 @@
+# Docs for the Azure Web Apps Deploy action: https://github.com/azure/functions-action
+# More GitHub Actions for Azure: https://github.com/Azure/actions
+
+name: Build and deploy Java project to Azure Function App - fh-clc3-dudyhugkk6ima
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+env:
+  AZURE_FUNCTIONAPP_NAME: fh-clc3-dudyhugkk6ima # set this to your function app name on Azure
+  PACKAGE_DIRECTORY: '.' # set this to the directory which contains pom.xml file
+  JAVA_VERSION: '11' # set this to the java version to use
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write #This is required for requesting the JWT
+      contents: read #This is required for actions/checkout
+
+    steps:
+      - name: 'Checkout GitHub Action'
+        uses: actions/checkout@v4
+
+      - name: Setup Java Sdk ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v1
+        with: |+
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: 'Restore Project Dependencies Using Mvn'
+        shell: pwsh
+        run: |+
+          pushd './${{ env.PACKAGE_DIRECTORY }}'
+          mvn clean package
+          popd
+      
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_CABF874BF6A048F8907C1D2CB72E19E4 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_0EB842DD06B1405D85F786281DBFE1C2 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_2CD75D74A05A4091A02804BE9423264C }}
+
+      - name: 'Run Azure Functions Action'
+        uses: Azure/functions-action@v1
+        id: fa
+        with:
+          app-name: 'fh-clc3-dudyhugkk6ima'
+          slot-name: 'Production'
+          package: '${{ env.PACKAGE_DIRECTORY }}'
+          respect-pom-xml: true
+          
